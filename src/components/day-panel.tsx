@@ -104,6 +104,8 @@ function QuickTaskForm() {
   const [customWeekdays, setCustomWeekdays] = useState<Weekday[]>(["MON", "WED", "FRI"]);
   const [asHabit, setAsHabit] = useState(false);
   const hasCustomWeekdays = customWeekdays.length > 0;
+  const customWeekdayRule = `WEEKLY:${customWeekdays.join(",")}`;
+  const customIntervalRule = `CUSTOM:${customInterval}`;
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
@@ -168,13 +170,23 @@ function QuickTaskForm() {
           </div>
           <button
             type="button"
-            onClick={() => setRecurrence({ frequency: "WEEKLY", interval: 1, weekdays: customWeekdays, sourceRule: `WEEKLY:${customWeekdays.join(",")}` })}
+            onClick={() => setRecurrence({ frequency: "WEEKLY", interval: 1, weekdays: customWeekdays, sourceRule: customWeekdayRule })}
             disabled={!hasCustomWeekdays}
-            className="mt-3 rounded-lg bg-[#2f8f7b] px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+            className={cn(
+              "mt-3 rounded-lg border px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50",
+              recurrence?.sourceRule === customWeekdayRule ? "border-[#2f8f7b] bg-[#2f8f7b] text-white" : "border-black/10 bg-white text-[#20242a] hover:bg-black/5 dark:border-white/10 dark:bg-[#191d23] dark:text-[#ece8df] dark:hover:bg-white/10"
+            )}
           >
             요일 반복 적용
           </button>
-          <button type="button" onClick={() => setRecurrence({ frequency: "CUSTOM", interval: customInterval, sourceRule: `CUSTOM:${customInterval}` })} className="ml-2 mt-3 rounded-lg border border-black/10 px-3 py-2 text-sm dark:border-white/10">
+          <button
+            type="button"
+            onClick={() => setRecurrence({ frequency: "CUSTOM", interval: customInterval, sourceRule: customIntervalRule })}
+            className={cn(
+              "ml-2 mt-3 rounded-lg border px-3 py-2 text-sm font-medium",
+              recurrence?.sourceRule === customIntervalRule ? "border-[#2f8f7b] bg-[#2f8f7b] text-white" : "border-black/10 bg-white text-[#20242a] hover:bg-black/5 dark:border-white/10 dark:bg-[#191d23] dark:text-[#ece8df] dark:hover:bg-white/10"
+            )}
+          >
             n일 반복 적용
           </button>
           <p className="mt-2 text-xs text-[#68707c] dark:text-[#aeb6bd]">선택됨: {recurrenceToLabel(recurrence)}</p>

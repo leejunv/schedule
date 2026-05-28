@@ -33,3 +33,8 @@
 
 - Changed the custom weekday recurrence apply button to the app's primary green instead of the dark-mode white variant.
 - Verified with `npm run build`: passed.
+
+## 2026-05-28 Custom recurrence selected states
+
+- Added selected-state styling for the custom weekday and n-day recurrence apply buttons.
+- Verified with `npm run build`: passed.

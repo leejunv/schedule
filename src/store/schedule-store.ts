@@ -2,7 +2,8 @@
 
 import { create } from "zustand";
 import { addMonths, parseISO } from "date-fns";
-import type { Habit, Priority, RecurrenceRule, ScheduleState, Task, TaskFilters } from "@/types/schedule";
+import type { RecurrenceRule, ScheduleState, Task, TaskFilters } from "@/types/schedule";
+import { mergeDefaultTasks } from "@/lib/default-schedule";
 import { monthKey, todayKey } from "@/utils/date";
 import { occursOnDate } from "@/utils/recurrence";
 
@@ -10,19 +11,16 @@ const defaultFilters: TaskFilters = {
   query: "",
   category: "all",
   completion: "all",
-  priority: "all",
   recurrenceOnly: false
 };
 
 type DraftTask = {
   title: string;
   date: string;
-  priority?: Priority;
   category?: string;
   notes?: string;
   recurrence?: RecurrenceRule;
   reminderMinutes?: number;
-  asHabit?: boolean;
 };
 
 interface ScheduleActions {
@@ -37,9 +35,6 @@ interface ScheduleActions {
   setFilters: (patch: Partial<TaskFilters>) => void;
   toggleHideCompleted: () => void;
   setDayNote: (date: string, body: string) => void;
-  addHabit: (name: string) => void;
-  toggleHabit: (id: string, date: string) => void;
-  removeHabit: (id: string) => void;
   toggleTheme: () => void;
   importData: (data: ScheduleState) => void;
   reset: () => void;
@@ -49,12 +44,24 @@ const initialState: ScheduleState = {
   selectedDate: todayKey(),
   visibleMonth: monthKey(new Date()),
   tasks: [],
-  habits: [],
   notes: {},
   filters: defaultFilters,
   hideCompleted: false,
   theme: "light"
 };
+
+function normalizeSchedule(data: Partial<ScheduleState> | undefined): ScheduleState {
+  return {
+    ...initialState,
+    selectedDate: data?.selectedDate ?? initialState.selectedDate,
+    visibleMonth: data?.visibleMonth ?? initialState.visibleMonth,
+    tasks: Array.isArray(data?.tasks) ? data.tasks : [],
+    notes: data?.notes ?? {},
+    filters: { ...defaultFilters, ...data?.filters },
+    hideCompleted: data?.hideCompleted ?? false,
+    theme: data?.theme ?? "light"
+  };
+}
 
 function createId(prefix: string) {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
@@ -71,28 +78,21 @@ export const useScheduleStore = create<ScheduleState & ScheduleActions>()((set) 
   setVisibleMonth: (visibleMonth) => set({ visibleMonth }),
   addTask: (draft) =>
     set((state) => {
-      const habitId = draft.asHabit ? createId("habit") : undefined;
       const task: Task = {
         id: createId("task"),
         title: draft.title.trim(),
         notes: draft.notes?.trim(),
         date: draft.date,
         completedDates: [],
-        priority: draft.priority ?? "medium",
         category: draft.category?.trim() || "일반",
         order: state.tasks.filter((item) => occursOnDate(item.date, draft.date, item.recurrence)).length,
         recurrence: draft.recurrence,
-        habitId,
         reminder: draft.reminderMinutes ? { enabled: true, minutesBefore: draft.reminderMinutes } : undefined,
         createdAt: now(),
         updatedAt: now()
       };
-      const habit: Habit | undefined = habitId
-        ? { id: habitId, name: task.title, color: "#2f8f7b", linkedTaskId: task.id, completedDates: [], createdAt: now() }
-        : undefined;
       return {
-        tasks: [...state.tasks, task],
-        habits: habit ? [...state.habits, habit] : state.habits
+        tasks: [...state.tasks, task]
       };
     }),
   updateTask: (id, patch) =>
@@ -101,8 +101,7 @@ export const useScheduleStore = create<ScheduleState & ScheduleActions>()((set) 
     })),
   deleteTask: (id) =>
     set((state) => ({
-      tasks: state.tasks.filter((task) => task.id !== id),
-      habits: state.habits.filter((habit) => habit.linkedTaskId !== id)
+      tasks: state.tasks.filter((task) => task.id !== id)
     })),
   toggleTask: (id, date) =>
     set((state) => ({
@@ -114,12 +113,6 @@ export const useScheduleStore = create<ScheduleState & ScheduleActions>()((set) 
           completedDates: done ? task.completedDates.filter((item) => item !== date) : [...task.completedDates, date],
           updatedAt: now()
         };
-      }),
-      habits: state.habits.map((habit) => {
-        const linked = state.tasks.find((task) => task.id === id && task.habitId === habit.id);
-        if (!linked) return habit;
-        const done = habit.completedDates.includes(date);
-        return { ...habit, completedDates: done ? habit.completedDates.filter((item) => item !== date) : [...habit.completedDates, date] };
       })
     })),
   reorderTasks: (date, activeId, overId) =>
@@ -139,21 +132,8 @@ export const useScheduleStore = create<ScheduleState & ScheduleActions>()((set) 
     set((state) => ({
       notes: { ...state.notes, [date]: { date, body } }
     })),
-  addHabit: (name) =>
-    set((state) => ({
-      habits: [...state.habits, { id: createId("habit"), name: name.trim(), color: "#d76b4f", completedDates: [], createdAt: now() }]
-    })),
-  toggleHabit: (id, date) =>
-    set((state) => ({
-      habits: state.habits.map((habit) =>
-        habit.id === id
-          ? { ...habit, completedDates: habit.completedDates.includes(date) ? habit.completedDates.filter((item) => item !== date) : [...habit.completedDates, date] }
-          : habit
-      )
-    })),
-  removeHabit: (id) => set((state) => ({ habits: state.habits.filter((habit) => habit.id !== id) })),
   toggleTheme: () => set((state) => ({ theme: state.theme === "light" ? "dark" : "light" })),
-  importData: (data) => set({ ...initialState, ...data }),
+  importData: (data) => set(mergeDefaultTasks(normalizeSchedule(data))),
   reset: () => set(initialState)
 }));
 
@@ -166,28 +146,22 @@ export function selectTasksForDate(state: ScheduleState, date: string) {
       if (state.hideCompleted && done) return false;
       if (state.filters.completion === "completed" && !done) return false;
       if (state.filters.completion === "active" && done) return false;
-      if (state.filters.priority !== "all" && task.priority !== state.filters.priority) return false;
       if (state.filters.category !== "all" && task.category !== state.filters.category) return false;
       if (state.filters.recurrenceOnly && !task.recurrence) return false;
       if (query && !`${task.title} ${task.category} ${task.notes ?? ""}`.toLowerCase().includes(query)) return false;
       return true;
     })
-    .sort((a, b) => Number(a.completedDates.includes(date)) - Number(b.completedDates.includes(date)) || priorityRank(a.priority) - priorityRank(b.priority) || a.order - b.order);
-}
-
-export function priorityRank(priority: Priority) {
-  return { high: 0, medium: 1, low: 2 }[priority];
+    .sort((a, b) => Number(a.completedDates.includes(date)) - Number(b.completedDates.includes(date)) || a.order - b.order);
 }
 
 export function getPersistableSchedule(state: ScheduleState): ScheduleState {
-  return {
+  return mergeDefaultTasks({
     selectedDate: state.selectedDate,
     visibleMonth: state.visibleMonth,
     tasks: state.tasks,
-    habits: state.habits,
     notes: state.notes,
     filters: state.filters,
     hideCompleted: state.hideCompleted,
     theme: state.theme
-  };
+  });
 }

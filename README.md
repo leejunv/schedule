@@ -1,6 +1,6 @@
 # DailySync
 
-날짜별 일정, 반복 체크리스트, 습관 추적을 통합한 Next.js 생산성 웹앱입니다.
+날짜별 일정, 반복 체크리스트를 통합한 Next.js 생산성 웹앱입니다.
 
 ## 실행
 
@@ -40,7 +40,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     match /users/{userId}/schedules/{scheduleId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId
+        && request.auth.token.email_verified == true
+        && request.auth.token.email == "ski00102@gmail.com";
     }
   }
 }

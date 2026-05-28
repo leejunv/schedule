@@ -4,10 +4,16 @@ import { useEffect, useRef, useState } from "react";
 import { onAuthStateChanged, signInWithPopup, signOut, type User } from "firebase/auth";
 import { doc, getDoc, onSnapshot, serverTimestamp, setDoc } from "firebase/firestore";
 import type { ScheduleState } from "@/types/schedule";
+import { mergeDefaultTasks } from "@/lib/default-schedule";
 import { firebaseAuth, firestore, googleProvider, isFirebaseConfigured } from "@/lib/firebase";
 import { getPersistableSchedule, useScheduleStore } from "@/store/schedule-store";
 
 type SyncStatus = "disabled" | "signed-out" | "loading" | "synced" | "saving" | "error";
+const allowedEmail = "ski00102@gmail.com";
+
+function isAllowedUser(user: User) {
+  return user.email?.toLowerCase() === allowedEmail;
+}
 
 export function useFirebaseSync() {
   const [user, setUser] = useState<User | null>(null);
@@ -26,7 +32,19 @@ export function useFirebaseSync() {
       return;
     }
 
-    return onAuthStateChanged(firebaseAuth, (currentUser) => {
+    const auth = firebaseAuth;
+
+    return onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser && !isAllowedUser(currentUser)) {
+        setUser(null);
+        setError(`${allowedEmail} 계정만 사용할 수 있습니다.`);
+        setStatus("error");
+        hydratedRef.current = false;
+        reset();
+        signOut(auth).catch(() => undefined);
+        return;
+      }
+
       setUser(currentUser);
       setStatus(currentUser ? "loading" : "signed-out");
       hydratedRef.current = false;
@@ -42,13 +60,20 @@ export function useFirebaseSync() {
     getDoc(ref)
       .then((snapshot) => {
         if (snapshot.exists()) {
+          const remoteSchedule = snapshot.data().schedule as ScheduleState;
+          const mergedSchedule = mergeDefaultTasks(remoteSchedule);
+          const addedDefaultTasks = mergedSchedule.tasks.length !== remoteSchedule.tasks.length;
+
           applyingRemoteRef.current = true;
-          importData(snapshot.data().schedule as ScheduleState);
+          importData(mergedSchedule);
           queueMicrotask(() => {
             applyingRemoteRef.current = false;
             hydratedRef.current = true;
             setStatus("synced");
           });
+          if (addedDefaultTasks) {
+            return setDoc(ref, { schedule: mergedSchedule, updatedAt: serverTimestamp() }, { merge: true });
+          }
           return;
         }
 
@@ -67,8 +92,9 @@ export function useFirebaseSync() {
         if (!snapshot.exists() || !hydratedRef.current) return;
         const remote = snapshot.data().schedule as ScheduleState | undefined;
         if (!remote) return;
+        const mergedRemote = mergeDefaultTasks(remote);
         applyingRemoteRef.current = true;
-        importData(remote);
+        importData(mergedRemote);
         queueMicrotask(() => {
           applyingRemoteRef.current = false;
           setStatus("synced");

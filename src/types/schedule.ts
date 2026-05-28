@@ -1,5 +1,3 @@
-export type Priority = "high" | "medium" | "low";
-
 export type CompletionFilter = "all" | "active" | "completed";
 
 export type RecurrenceFrequency =
@@ -35,23 +33,12 @@ export interface Task {
   notes?: string;
   date: string;
   completedDates: string[];
-  priority: Priority;
   category: string;
   order: number;
   recurrence?: RecurrenceRule;
-  habitId?: string;
   reminder?: Reminder;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface Habit {
-  id: string;
-  name: string;
-  color: string;
-  linkedTaskId?: string;
-  completedDates: string[];
-  createdAt: string;
 }
 
 export interface DayNote {
@@ -63,7 +50,6 @@ export interface TaskFilters {
   query: string;
   category: string;
   completion: CompletionFilter;
-  priority: Priority | "all";
   recurrenceOnly: boolean;
 }
 
@@ -71,7 +57,6 @@ export interface ScheduleState {
   selectedDate: string;
   visibleMonth: string;
   tasks: Task[];
-  habits: Habit[];
   notes: Record<string, DayNote>;
   filters: TaskFilters;
   hideCompleted: boolean;

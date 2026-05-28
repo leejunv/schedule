@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "DailySync",
-  description: "캘린더, 반복 일정, 체크리스트, 습관 관리를 통합한 생산성 앱입니다.",
+  description: "캘린더, 반복 일정, 체크리스트를 통합한 생산성 앱입니다.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

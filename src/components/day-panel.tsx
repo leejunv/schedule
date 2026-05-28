@@ -5,7 +5,7 @@ import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { CalendarClock, Check, GripVertical, Plus, Repeat, Trash2 } from "lucide-react";
-import type { Priority, RecurrenceRule, Task, Weekday } from "@/types/schedule";
+import type { RecurrenceRule, Task, Weekday } from "@/types/schedule";
 import { selectTasksForDate, useScheduleStore } from "@/store/schedule-store";
 import { formatReadable } from "@/utils/date";
 import { recurrenceToLabel, recurrenceToShortLabel } from "@/utils/recurrence";
@@ -21,14 +21,10 @@ const quickRecurrences: { label: string; rule?: RecurrenceRule }[] = [
 
 const weekdayOptions: Weekday[] = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const weekdayLabels: Record<Weekday, string> = { MON: "월", TUE: "화", WED: "수", THU: "목", FRI: "금", SAT: "토", SUN: "일" };
-const priorityLabels: Record<Priority, string> = { high: "높음", medium: "중간", low: "낮음" };
 const filterLabels: Record<string, string> = {
   all: "전체",
   active: "미완료",
-  completed: "완료",
-  high: "높음",
-  medium: "중간",
-  low: "낮음"
+  completed: "완료"
 };
 
 export function DayPanel() {
@@ -58,10 +54,9 @@ export function DayPanel() {
 
       <QuickTaskForm />
 
-      <div className="my-4 grid gap-2 sm:grid-cols-4">
+      <div className="my-4 grid gap-2 sm:grid-cols-3">
         <FilterSelect label="카테고리" value={state.filters.category} onChange={(value) => state.setFilters({ category: value })} options={["all", ...categories]} />
         <FilterSelect label="상태" value={state.filters.completion} onChange={(value) => state.setFilters({ completion: value as typeof state.filters.completion })} options={["all", "active", "completed"]} />
-        <FilterSelect label="우선순위" value={state.filters.priority} onChange={(value) => state.setFilters({ priority: value as Priority | "all" })} options={["all", "high", "medium", "low"]} />
         <label className="flex min-h-10 items-center gap-2 rounded-lg border border-black/10 px-3 text-sm dark:border-white/10">
           <input type="checkbox" checked={state.filters.recurrenceOnly} onChange={(event) => state.setFilters({ recurrenceOnly: event.target.checked })} />
           반복만 보기
@@ -96,13 +91,11 @@ function QuickTaskForm() {
   const selectedDate = useScheduleStore((state) => state.selectedDate);
   const addTask = useScheduleStore((state) => state.addTask);
   const [title, setTitle] = useState("");
-  const [priority, setPriority] = useState<Priority>("medium");
   const [category, setCategory] = useState("일반");
   const [recurrence, setRecurrence] = useState<RecurrenceRule | undefined>();
   const [customOpen, setCustomOpen] = useState(false);
   const [customInterval, setCustomInterval] = useState(2);
   const [customWeekdays, setCustomWeekdays] = useState<Weekday[]>(["MON", "WED", "FRI"]);
-  const [asHabit, setAsHabit] = useState(false);
   const hasCustomWeekdays = customWeekdays.length > 0;
   const customWeekdayRule = `WEEKLY:${customWeekdays.join(",")}`;
   const customIntervalRule = `CUSTOM:${customInterval}`;
@@ -110,7 +103,7 @@ function QuickTaskForm() {
   function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!title.trim()) return;
-    addTask({ title, date: selectedDate, priority, category, recurrence, asHabit });
+    addTask({ title, date: selectedDate, category, recurrence });
     setTitle("");
   }
 
@@ -128,17 +121,8 @@ function QuickTaskForm() {
           추가
         </button>
       </div>
-      <div className="mt-3 grid gap-2 sm:grid-cols-[130px_1fr_120px]">
-        <select value={priority} onChange={(event) => setPriority(event.target.value as Priority)} className="rounded-lg border border-black/10 bg-white px-3 py-2 dark:border-white/10 dark:bg-[#191d23]">
-          <option value="high">높음</option>
-          <option value="medium">중간</option>
-          <option value="low">낮음</option>
-        </select>
+      <div className="mt-3 grid gap-2">
         <input value={category} onChange={(event) => setCategory(event.target.value)} className="rounded-lg border border-black/10 bg-white px-3 py-2 dark:border-white/10 dark:bg-[#191d23]" placeholder="카테고리" />
-        <label className="flex items-center gap-2 rounded-lg border border-black/10 bg-white px-3 text-sm dark:border-white/10 dark:bg-[#191d23]">
-          <input type="checkbox" checked={asHabit} onChange={(event) => setAsHabit(event.target.checked)} />
-          습관
-        </label>
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         {quickRecurrences.map((item) => (
@@ -214,7 +198,6 @@ function TaskRow({ task, date }: { task: Task; date: string }) {
       <div className="min-w-0 flex-1">
         <input value={task.title} onChange={(event) => updateTask(task.id, { title: event.target.value })} className={cn("w-full bg-transparent font-medium outline-none", completed && "text-[#68707c] line-through dark:text-[#aeb6bd]")} />
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#68707c] dark:text-[#aeb6bd]">
-          <span className={cn("rounded-full px-2 py-1", task.priority === "high" ? "bg-[#d76b4f]/15 text-[#b94e33]" : task.priority === "medium" ? "bg-[#d9b45f]/20 text-[#8a641c]" : "bg-[#2f8f7b]/15 text-[#2f8f7b]")}>{priorityLabels[task.priority]}</span>
           <span>{task.category}</span>
           {task.recurrence && (
             <span className="inline-flex items-center gap-1">

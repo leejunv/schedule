@@ -1,18 +1,16 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, Flame } from "lucide-react";
+import { CheckCircle2, ClipboardList } from "lucide-react";
 import { selectTasksForDate, useScheduleStore } from "@/store/schedule-store";
 import { todayKey } from "@/utils/date";
-import { getStreak } from "@/utils/habits";
 
 export function SummaryPanel() {
   const state = useScheduleStore();
   const today = todayKey();
   const tasks = selectTasksForDate(state, today);
   const done = tasks.filter((task) => task.completedDates.includes(today)).length;
-  const high = tasks.filter((task) => task.priority === "high" && !task.completedDates.includes(today)).length;
+  const active = tasks.length - done;
   const rate = tasks.length ? Math.round((done / tasks.length) * 100) : 0;
-  const bestStreak = Math.max(0, ...state.habits.map((habit) => getStreak(habit.completedDates)));
 
   return (
     <section className="rounded-lg border border-black/10 bg-white p-4 shadow-soft dark:border-white/10 dark:bg-[#191d23]">
@@ -23,10 +21,9 @@ export function SummaryPanel() {
       <div className="h-2 rounded-full bg-black/10 dark:bg-white/10">
         <div className="h-2 rounded-full bg-[#2f8f7b]" style={{ width: `${rate}%` }} />
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+      <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
         <Metric icon={<CheckCircle2 size={16} />} label="완료" value={`${done}/${tasks.length}`} />
-        <Metric icon={<AlertCircle size={16} />} label="높음" value={String(high)} />
-        <Metric icon={<Flame size={16} />} label="연속" value={`${bestStreak}일`} />
+        <Metric icon={<ClipboardList size={16} />} label="남은 일정" value={String(active)} />
       </div>
     </section>
   );

@@ -38,3 +38,16 @@
 
 - Added selected-state styling for the custom weekday and n-day recurrence apply buttons.
 - Verified with `npm run build`: passed.
+
+## 2026-05-28 Remove habits and priority
+
+- Removed habit UI, navigation, store actions, types, summaries, and copy.
+- Removed task priority selection, filtering, labels, sorting, and summary metrics.
+- Verified with `npm run build`: passed.
+
+## 2026-05-28 Personal schedule defaults
+
+- Added the requested household recurring tasks as stable default tasks.
+- Merged missing default tasks into existing Firebase schedule data on login without duplicating them.
+- Added client-side access restriction for `ski00102@gmail.com` and documented matching Firestore rules.
+- Verified with `npm run build`: passed.

@@ -103,12 +103,18 @@ function QuickTaskForm() {
   const [customInterval, setCustomInterval] = useState(2);
   const [customWeekdays, setCustomWeekdays] = useState<Weekday[]>(["MON", "WED", "FRI"]);
   const [asHabit, setAsHabit] = useState(false);
+  const hasCustomWeekdays = customWeekdays.length > 0;
 
   function submit(event: React.FormEvent) {
     event.preventDefault();
     if (!title.trim()) return;
     addTask({ title, date: selectedDate, priority, category, recurrence, asHabit });
     setTitle("");
+  }
+
+  function updateCustomInterval(value: string) {
+    const parsed = Number(value);
+    setCustomInterval(Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1);
   }
 
   return (
@@ -147,7 +153,7 @@ function QuickTaskForm() {
           <div className="grid gap-2 sm:grid-cols-[150px_1fr]">
             <label className="text-sm">
               <span className="mb-1 block text-[#68707c] dark:text-[#aeb6bd]">n일마다</span>
-              <input type="number" min={1} value={customInterval} onChange={(event) => setCustomInterval(Number(event.target.value))} className="w-full rounded-lg border border-black/10 bg-transparent px-3 py-2 dark:border-white/10" />
+              <input type="number" min={1} value={customInterval} onChange={(event) => updateCustomInterval(event.target.value)} className="w-full rounded-lg border border-black/10 bg-transparent px-3 py-2 dark:border-white/10" />
             </label>
             <div>
               <span className="mb-1 block text-sm text-[#68707c] dark:text-[#aeb6bd]">특정 요일</span>
@@ -160,12 +166,18 @@ function QuickTaskForm() {
               </div>
             </div>
           </div>
-          <button type="button" onClick={() => setRecurrence({ frequency: "WEEKLY", interval: 1, weekdays: customWeekdays, sourceRule: `WEEKLY:${customWeekdays.join(",")}` })} className="mt-3 rounded-lg bg-[#20242a] px-3 py-2 text-sm text-white dark:bg-[#ece8df] dark:text-[#111418]">
+          <button
+            type="button"
+            onClick={() => setRecurrence({ frequency: "WEEKLY", interval: 1, weekdays: customWeekdays, sourceRule: `WEEKLY:${customWeekdays.join(",")}` })}
+            disabled={!hasCustomWeekdays}
+            className="mt-3 rounded-lg bg-[#20242a] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#ece8df] dark:text-[#111418]"
+          >
             요일 반복 적용
           </button>
           <button type="button" onClick={() => setRecurrence({ frequency: "CUSTOM", interval: customInterval, sourceRule: `CUSTOM:${customInterval}` })} className="ml-2 mt-3 rounded-lg border border-black/10 px-3 py-2 text-sm dark:border-white/10">
             n일 반복 적용
           </button>
+          <p className="mt-2 text-xs text-[#68707c] dark:text-[#aeb6bd]">선택됨: {recurrenceToLabel(recurrence)}</p>
         </div>
       )}
     </form>

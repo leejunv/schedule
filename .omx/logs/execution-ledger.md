@@ -22,3 +22,9 @@
 - Updated Data panel and README copy to remove stale local-storage wording.
 - Renamed the reset action to account data reset and added a confirmation prompt.
 - Verified with `npm run build`: passed.
+
+## 2026-05-28 Custom recurrence validation
+
+- Clarified the selected custom recurrence state in the task form.
+- Clamped custom day intervals to positive integers and disabled weekday recurrence when no weekday is selected.
+- Verified with `npm run build`: passed.

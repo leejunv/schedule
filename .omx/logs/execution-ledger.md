@@ -28,3 +28,8 @@
 - Clarified the selected custom recurrence state in the task form.
 - Clamped custom day intervals to positive integers and disabled weekday recurrence when no weekday is selected.
 - Verified with `npm run build`: passed.
+
+## 2026-05-28 Custom recurrence button color
+
+- Changed the custom weekday recurrence apply button to the app's primary green instead of the dark-mode white variant.
+- Verified with `npm run build`: passed.

@@ -170,7 +170,7 @@ function QuickTaskForm() {
             type="button"
             onClick={() => setRecurrence({ frequency: "WEEKLY", interval: 1, weekdays: customWeekdays, sourceRule: `WEEKLY:${customWeekdays.join(",")}` })}
             disabled={!hasCustomWeekdays}
-            className="mt-3 rounded-lg bg-[#20242a] px-3 py-2 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50 dark:bg-[#ece8df] dark:text-[#111418]"
+            className="mt-3 rounded-lg bg-[#2f8f7b] px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
           >
             요일 반복 적용
           </button>

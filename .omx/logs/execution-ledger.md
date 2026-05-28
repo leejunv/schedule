@@ -16,3 +16,9 @@
 - Removed Zustand localStorage persistence so Firestore is the source of truth after login.
 - Clear the legacy `dailysync-store` localStorage key on app startup and reset in-memory schedule state when signed out.
 - Verified with `npm run build`: passed.
+
+## 2026-05-28 Firebase-only copy cleanup
+
+- Updated Data panel and README copy to remove stale local-storage wording.
+- Renamed the reset action to account data reset and added a confirmation prompt.
+- Verified with `npm run build`: passed.

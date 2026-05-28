@@ -11,9 +11,9 @@ npm run dev
 
 로컬 주소는 `http://localhost:3000`입니다.
 
-## Firebase 동기화 설정
+## Firebase 설정
 
-Firebase를 설정하지 않아도 앱은 로컬 저장으로 동작합니다. PC와 모바일을 같은 데이터로 동기화하려면 Firebase Auth와 Firestore를 설정하세요.
+DailySync는 로그인한 Google 계정의 Firestore 데이터를 기준으로 동작합니다. PC와 모바일을 같은 데이터로 사용하려면 Firebase Auth와 Firestore를 설정하세요.
 
 1. Firebase Console에서 Web App을 만들고 설정값을 확인합니다.
 2. Authentication에서 Google provider를 활성화합니다.

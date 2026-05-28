@@ -187,3 +187,16 @@ export function selectTasksForDate(state: ScheduleState, date: string) {
 export function priorityRank(priority: Priority) {
   return { high: 0, medium: 1, low: 2 }[priority];
 }
+
+export function getPersistableSchedule(state: ScheduleState): ScheduleState {
+  return {
+    selectedDate: state.selectedDate,
+    visibleMonth: state.visibleMonth,
+    tasks: state.tasks,
+    habits: state.habits,
+    notes: state.notes,
+    filters: state.filters,
+    hideCompleted: state.hideCompleted,
+    theme: state.theme
+  };
+}

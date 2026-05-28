@@ -7,6 +7,7 @@ import { DataTools } from "@/components/data-tools";
 import { DayPanel } from "@/components/day-panel";
 import { HabitPanel } from "@/components/habit-panel";
 import { SummaryPanel } from "@/components/summary-panel";
+import { SyncStatus } from "@/components/sync-status";
 import { useScheduleStore } from "@/store/schedule-store";
 import { cn } from "@/utils/ui";
 
@@ -67,6 +68,7 @@ export function DailySyncApp() {
           >
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
+          <SyncStatus />
         </div>
       </header>
 

@@ -51,3 +51,8 @@
 - Merged missing default tasks into existing Firebase schedule data on login without duplicating them.
 - Added client-side access restriction for `ski00102@gmail.com` and documented matching Firestore rules.
 - Verified with `npm run build`: passed.
+
+## 2026-05-28 Editable added tasks
+
+- Added a task edit mode for updating date, title, category, notes, and recurrence after creation.
+- Verified with `npm run build`: passed.

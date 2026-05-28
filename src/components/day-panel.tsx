@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { closestCenter, DndContext, type DragEndEvent } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CalendarClock, Check, GripVertical, Plus, Repeat, Trash2 } from "lucide-react";
+import { CalendarClock, Check, GripVertical, Pencil, Plus, Repeat, Save, Trash2, X } from "lucide-react";
 import type { RecurrenceRule, Task, Weekday } from "@/types/schedule";
 import { selectTasksForDate, useScheduleStore } from "@/store/schedule-store";
 import { formatReadable } from "@/utils/date";
@@ -186,6 +186,45 @@ function TaskRow({ task, date }: { task: Task; date: string }) {
   const deleteTask = useScheduleStore((state) => state.deleteTask);
   const updateTask = useScheduleStore((state) => state.updateTask);
   const completed = task.completedDates.includes(date);
+  const [editing, setEditing] = useState(false);
+  const [draftTitle, setDraftTitle] = useState(task.title);
+  const [draftDate, setDraftDate] = useState(task.date);
+  const [draftCategory, setDraftCategory] = useState(task.category);
+  const [draftNotes, setDraftNotes] = useState(task.notes ?? "");
+  const [draftRecurrence, setDraftRecurrence] = useState<RecurrenceRule | undefined>(task.recurrence);
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customInterval, setCustomInterval] = useState(task.recurrence?.frequency === "CUSTOM" ? task.recurrence.interval ?? 2 : 2);
+  const [customWeekdays, setCustomWeekdays] = useState<Weekday[]>(task.recurrence?.weekdays?.length ? task.recurrence.weekdays : ["MON", "WED", "FRI"]);
+  const hasCustomWeekdays = customWeekdays.length > 0;
+  const customWeekdayRule = `WEEKLY:${customWeekdays.join(",")}`;
+  const customIntervalRule = `CUSTOM:${customInterval}`;
+
+  function openEditor() {
+    setDraftTitle(task.title);
+    setDraftDate(task.date);
+    setDraftCategory(task.category);
+    setDraftNotes(task.notes ?? "");
+    setDraftRecurrence(task.recurrence);
+    setEditing(true);
+  }
+
+  function saveTask(event: React.FormEvent) {
+    event.preventDefault();
+    if (!draftTitle.trim()) return;
+    updateTask(task.id, {
+      title: draftTitle.trim(),
+      date: draftDate,
+      category: draftCategory.trim() || "일반",
+      notes: draftNotes.trim() || undefined,
+      recurrence: draftRecurrence
+    });
+    setEditing(false);
+  }
+
+  function updateCustomInterval(value: string) {
+    const parsed = Number(value);
+    setCustomInterval(Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1);
+  }
 
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition }} className="flex gap-2 rounded-lg border border-black/10 bg-white p-3 dark:border-white/10 dark:bg-[#111418]">
@@ -195,25 +234,101 @@ function TaskRow({ task, date }: { task: Task; date: string }) {
       <button type="button" onClick={() => toggleTask(task.id, date)} className={cn("mt-0.5 grid h-6 w-6 place-items-center rounded-md border", completed ? "border-[#2f8f7b] bg-[#2f8f7b] text-white" : "border-black/20 dark:border-white/20")} aria-label="완료 상태 전환">
         {completed && <Check size={15} />}
       </button>
-      <div className="min-w-0 flex-1">
-        <input value={task.title} onChange={(event) => updateTask(task.id, { title: event.target.value })} className={cn("w-full bg-transparent font-medium outline-none", completed && "text-[#68707c] line-through dark:text-[#aeb6bd]")} />
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#68707c] dark:text-[#aeb6bd]">
-          <span>{task.category}</span>
-          {task.recurrence && (
-            <span className="inline-flex items-center gap-1">
-              <Repeat size={12} />
-              {recurrenceToShortLabel(task.recurrence)}
-            </span>
+      {editing ? (
+        <form onSubmit={saveTask} className="min-w-0 flex-1 space-y-3">
+          <div className="grid gap-2 sm:grid-cols-[140px_1fr]">
+            <label className="block text-sm">
+              <span className="mb-1 block text-xs text-[#68707c] dark:text-[#aeb6bd]">날짜</span>
+              <input type="date" value={draftDate} onChange={(event) => setDraftDate(event.target.value)} className="min-h-10 w-full rounded-lg border border-black/10 bg-[#f7f5f0] px-3 outline-none focus:border-[#2f8f7b] dark:border-white/10 dark:bg-[#191d23]" />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block text-xs text-[#68707c] dark:text-[#aeb6bd]">할 일</span>
+              <input value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} className="min-h-10 w-full rounded-lg border border-black/10 bg-[#f7f5f0] px-3 outline-none focus:border-[#2f8f7b] dark:border-white/10 dark:bg-[#191d23]" />
+            </label>
+          </div>
+          <label className="block text-sm">
+            <span className="mb-1 block text-xs text-[#68707c] dark:text-[#aeb6bd]">카테고리</span>
+            <input value={draftCategory} onChange={(event) => setDraftCategory(event.target.value)} className="min-h-10 w-full rounded-lg border border-black/10 bg-[#f7f5f0] px-3 outline-none focus:border-[#2f8f7b] dark:border-white/10 dark:bg-[#191d23]" />
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block text-xs text-[#68707c] dark:text-[#aeb6bd]">메모</span>
+            <textarea value={draftNotes} onChange={(event) => setDraftNotes(event.target.value)} className="min-h-20 w-full resize-y rounded-lg border border-black/10 bg-[#f7f5f0] p-3 outline-none focus:border-[#2f8f7b] dark:border-white/10 dark:bg-[#191d23]" />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {quickRecurrences.map((item) => (
+              <button key={item.label} type="button" onClick={() => setDraftRecurrence(item.rule)} className={cn("rounded-lg border px-3 py-2 text-sm", draftRecurrence?.sourceRule === item.rule?.sourceRule || (!draftRecurrence && !item.rule) ? "border-[#2f8f7b] bg-[#2f8f7b]/10" : "border-black/10 dark:border-white/10")}>
+                {item.label}
+              </button>
+            ))}
+            <button type="button" onClick={() => setCustomOpen(!customOpen)} className="rounded-lg border border-black/10 px-3 py-2 text-sm dark:border-white/10">
+              사용자 지정
+            </button>
+          </div>
+          {customOpen && (
+            <div className="rounded-lg border border-black/10 bg-[#f7f5f0] p-3 dark:border-white/10 dark:bg-[#191d23]">
+              <div className="grid gap-2 sm:grid-cols-[150px_1fr]">
+                <label className="text-sm">
+                  <span className="mb-1 block text-[#68707c] dark:text-[#aeb6bd]">n일마다</span>
+                  <input type="number" min={1} value={customInterval} onChange={(event) => updateCustomInterval(event.target.value)} className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 dark:border-white/10 dark:bg-[#111418]" />
+                </label>
+                <div>
+                  <span className="mb-1 block text-sm text-[#68707c] dark:text-[#aeb6bd]">특정 요일</span>
+                  <div className="flex flex-wrap gap-1">
+                    {weekdayOptions.map((day) => (
+                      <button key={day} type="button" onClick={() => setCustomWeekdays((current) => (current.includes(day) ? current.filter((item) => item !== day) : [...current, day]))} className={cn("rounded-md px-2 py-1 text-xs", customWeekdays.includes(day) ? "bg-[#2f8f7b] text-white" : "bg-black/5 dark:bg-white/10")}>
+                        {weekdayLabels[day]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <button type="button" onClick={() => setDraftRecurrence({ frequency: "WEEKLY", interval: 1, weekdays: customWeekdays, sourceRule: customWeekdayRule })} disabled={!hasCustomWeekdays} className={cn("mt-3 rounded-lg border px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50", draftRecurrence?.sourceRule === customWeekdayRule ? "border-[#2f8f7b] bg-[#2f8f7b] text-white" : "border-black/10 bg-white hover:bg-black/5 dark:border-white/10 dark:bg-[#111418] dark:hover:bg-white/10")}>
+                요일 반복 적용
+              </button>
+              <button type="button" onClick={() => setDraftRecurrence({ frequency: "CUSTOM", interval: customInterval, sourceRule: customIntervalRule })} className={cn("ml-2 mt-3 rounded-lg border px-3 py-2 text-sm font-medium", draftRecurrence?.sourceRule === customIntervalRule ? "border-[#2f8f7b] bg-[#2f8f7b] text-white" : "border-black/10 bg-white hover:bg-black/5 dark:border-white/10 dark:bg-[#111418] dark:hover:bg-white/10")}>
+                n일 반복 적용
+              </button>
+              <p className="mt-2 text-xs text-[#68707c] dark:text-[#aeb6bd]">선택됨: {recurrenceToLabel(draftRecurrence)}</p>
+            </div>
           )}
-          {task.reminder?.enabled && (
-            <span className="inline-flex items-center gap-1">
-              <CalendarClock size={12} />
-              {task.reminder.minutesBefore}분 전
-            </span>
-          )}
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setEditing(false)} className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-black/10 px-3 text-sm hover:bg-black/5 dark:border-white/10 dark:hover:bg-white/10">
+              <X size={15} />
+              취소
+            </button>
+            <button type="submit" className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-[#2f8f7b] px-3 text-sm font-medium text-white">
+              <Save size={15} />
+              저장
+            </button>
+          </div>
+        </form>
+      ) : (
+        <div className="min-w-0 flex-1">
+          <input value={task.title} onChange={(event) => updateTask(task.id, { title: event.target.value })} className={cn("w-full bg-transparent font-medium outline-none", completed && "text-[#68707c] line-through dark:text-[#aeb6bd]")} />
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-[#68707c] dark:text-[#aeb6bd]">
+            <span>{task.category}</span>
+            {task.recurrence && (
+              <span className="inline-flex items-center gap-1">
+                <Repeat size={12} />
+                {recurrenceToShortLabel(task.recurrence)}
+              </span>
+            )}
+            {task.reminder?.enabled && (
+              <span className="inline-flex items-center gap-1">
+                <CalendarClock size={12} />
+                {task.reminder.minutesBefore}분 전
+              </span>
+            )}
+          </div>
+          {task.recurrence && <div className="mt-1 text-xs text-[#68707c] dark:text-[#aeb6bd]">{recurrenceToLabel(task.recurrence)}</div>}
+          {task.notes && <div className="mt-1 whitespace-pre-wrap text-xs text-[#68707c] dark:text-[#aeb6bd]">{task.notes}</div>}
         </div>
-        {task.recurrence && <div className="mt-1 text-xs text-[#68707c] dark:text-[#aeb6bd]">{recurrenceToLabel(task.recurrence)}</div>}
-      </div>
+      )}
+      {!editing && (
+        <button type="button" onClick={openEditor} className="grid h-8 w-8 place-items-center rounded-lg text-[#68707c] hover:bg-[#2f8f7b]/10 hover:text-[#2f8f7b]" aria-label="일정 수정">
+          <Pencil size={16} />
+        </button>
+      )}
       <button type="button" onClick={() => deleteTask(task.id)} className="grid h-8 w-8 place-items-center rounded-lg text-[#68707c] hover:bg-[#d76b4f]/10 hover:text-[#b94e33]" aria-label="일정 삭제">
         <Trash2 size={16} />
       </button>

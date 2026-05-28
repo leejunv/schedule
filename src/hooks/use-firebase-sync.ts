@@ -14,10 +14,13 @@ export function useFirebaseSync() {
   const [status, setStatus] = useState<SyncStatus>(isFirebaseConfigured ? "loading" : "disabled");
   const [error, setError] = useState<string | null>(null);
   const importData = useScheduleStore((state) => state.importData);
+  const reset = useScheduleStore((state) => state.reset);
   const hydratedRef = useRef(false);
   const applyingRemoteRef = useRef(false);
 
   useEffect(() => {
+    window.localStorage.removeItem("dailysync-store");
+
     if (!firebaseAuth || !firestore) {
       setStatus("disabled");
       return;
@@ -27,8 +30,9 @@ export function useFirebaseSync() {
       setUser(currentUser);
       setStatus(currentUser ? "loading" : "signed-out");
       hydratedRef.current = false;
+      if (!currentUser) reset();
     });
-  }, []);
+  }, [reset]);
 
   useEffect(() => {
     if (!user || !firestore) return;
@@ -108,6 +112,7 @@ export function useFirebaseSync() {
   async function logout() {
     if (!firebaseAuth) return;
     await signOut(firebaseAuth);
+    reset();
   }
 
   return {

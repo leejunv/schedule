@@ -1,0 +1,34 @@
+[
+  {
+    "id": "ledger_ed934c83-dac",
+    "createdAt": "2026-05-28T00:27:20.971Z",
+    "metadata": {},
+    "kind": "session",
+    "action": "session_start",
+    "detail": "Session started on unknown"
+  },
+  {
+    "id": "ledger_981c49b8-eca",
+    "createdAt": "2026-05-28T00:27:20.978Z",
+    "metadata": {},
+    "kind": "session",
+    "action": "session_mark_command",
+    "detail": "session:start"
+  },
+  {
+    "id": "ledger_999abbda-374",
+    "createdAt": "2026-05-28T00:27:20.986Z",
+    "metadata": {},
+    "kind": "session",
+    "action": "session_mark_command",
+    "detail": "omx:session"
+  },
+  {
+    "id": "ledger_7b8ab26a-448",
+    "createdAt": "2026-05-28T00:27:23.606Z",
+    "metadata": {},
+    "kind": "session",
+    "action": "session_mark_command",
+    "detail": "omx:hud"
+  }
+]
